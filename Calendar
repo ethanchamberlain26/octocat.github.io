@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book a Session</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Layout: site header, one bordered card (intro panel left, booking steps right), contact footer; stacks on phones. */
+  :root {
+    --paper: #fbf8f1;
+    --paper-deep: #f2ecdd;
+    --green: #51684b;
+    --green-ink: #33452f;
+    --green-soft: #dfe6d8;
+    --line: #d9d2bf;
+    --shadow: #1c2819;
+    --font: "Hanken Grotesk", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --ease: cubic-bezier(.22,.8,.3,1); /* smooth ease-out for all motion */
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: light; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--green-ink);
+    font: 16px/1.5 var(--font);
+    min-height: 100vh;
+    padding: 32px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .page { width: 100%; max-width: 920px; min-width: 0; }
+  .top { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 24px; }
+  .brand { font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--green-ink); text-decoration: none; }
+  .top nav { display: flex; gap: 22px; flex-wrap: wrap; }
+  .top nav a, .foot a { color: var(--green); font-weight: 600; font-size: 15px; text-decoration: none; border-bottom: 1.5px solid transparent; }
+  .top nav a:hover, .foot a:hover { border-bottom-color: var(--green); }
+  .foot { margin-top: 28px; }
+  .card {
+    width: 100%;
+    max-width: 920px;
+    display: grid;
+    grid-template-columns: 290px minmax(0, 1fr);
+    border: 2px solid var(--green);
+    border-radius: 6px;
+    background: var(--paper);
+    box-shadow: 8px 8px 0 var(--shadow);
+    overflow: hidden;
+    position: relative;
+  }
+  .host {
+    background: var(--green);
+    color: var(--paper);
+    padding: 28px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-width: 0;
+  }
+  .host h1 { font-size: 34px; line-height: 1.05; font-weight: 700; letter-spacing: -.02em; margin: 0 0 12px; text-wrap: balance; }
+  .host p { margin: 0; opacity: .92; }
+
+  .main { padding: 28px 30px 30px; min-width: 0; }
+  .view { animation: enter .45s var(--ease) both; }
+  .step-title { font-size: 22px; line-height: 1.2; font-weight: 700; letter-spacing: -.01em; margin: 0 0 16px; }
+
+  .types { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .type {
+    padding: 8px 14px; border-radius: 4px; border: 1.5px solid var(--green);
+    background: transparent; color: var(--green); font: 600 14px var(--font); cursor: pointer;
+  }
+  .type small { font-weight: 500; opacity: .75; margin-left: 6px; }
+  .type:hover { background: var(--green-soft); }
+  .type.sel { background: var(--green); color: var(--paper); }
+
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-head h2 { font-size: 17px; font-weight: 600; margin: 0; }
+  .nav { display: flex; gap: 6px; }
+  .nav button {
+    width: 36px; height: 36px; border-radius: 4px;
+    border: 1.5px solid var(--green); background: transparent; color: var(--green);
+    font: 600 16px var(--font); cursor: pointer;
+  }
+  .nav button:hover:not(:disabled) { background: var(--green-soft); }
+  .nav button:disabled { opacity: .3; cursor: default; }
+  .month { animation: enter .35s var(--ease) both; }
+
+  .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+  .dow { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--green); opacity: .7; padding-bottom: 4px; }
+  .day {
+    aspect-ratio: 1; border: 0; border-radius: 4px;
+    background: transparent; color: var(--green-ink);
+    font: 500 15px var(--font); cursor: pointer; position: relative;
+    font-variant-numeric: tabular-nums;
+  }
+  .day:disabled { color: var(--line); cursor: default; }
+  .day.open { background: var(--green-soft); }
+  .day.open:hover { background: #cfdac6; }
+  .day.today::after { content: ""; position: absolute; left: 50%; bottom: 5px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--green); }
+  .day.sel { background: var(--green); color: var(--paper); }
+  .day.pop { animation: pop .4s var(--ease) both; }
+  .day.sel.today::after { background: var(--paper); }
+  :focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+
+  .slots-wrap { margin-top: 22px; border-top: 1.5px dashed var(--line); padding-top: 18px; }
+  .slots-label { margin: 0 0 10px; font-weight: 600; }
+  .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .slot {
+    padding: 9px 6px; border-radius: 4px; border: 1.5px solid var(--green);
+    background: transparent; color: var(--green); font: 600 15px var(--font); cursor: pointer;
+    font-variant-numeric: tabular-nums;
+  }
+  .slots.anim .slot { animation: enter .35s var(--ease) both; animation-delay: calc(var(--i) * 40ms); }
+  .slot:hover { background: var(--green-soft); }
+  .slot.sel { background: var(--green); color: var(--paper); }
+  .slot small { display: block; font-size: 12px; font-weight: 500; opacity: .75; margin-top: 1px; }
+  .slot span { display: block; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; opacity: .75; }
+  .hint.sun { margin: -6px 0 12px; font-size: 14px; }
+  .hint { color: var(--green); opacity: .75; margin: 0; }
+
+  form { display: grid; gap: 14px; max-width: 420px; }
+  label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; }
+  input, textarea, select {
+    font: 400 16px var(--font); color: var(--green-ink);
+    padding: 10px 12px; border-radius: 4px; border: 1.5px solid var(--line);
+    background: #fff; width: 100%;
+  }
+  select { appearance: auto; }
+  input:focus, textarea:focus, select:focus { border-color: var(--green); outline: none; box-shadow: 0 0 0 3px var(--green-soft); }
+  .summary { background: var(--paper-deep); border-radius: 4px; padding: 12px 14px; margin: 0 0 16px; max-width: 420px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    font: 600 16px var(--font); padding: 11px 22px; border-radius: 4px; cursor: pointer;
+    border: 2px solid var(--green); background: var(--green); color: var(--paper);
+  }
+  .btn:hover { background: var(--green-ink); border-color: var(--green-ink); }
+  .btn.ghost { background: transparent; color: var(--green); }
+  .btn.ghost:hover { background: var(--green-soft); }
+
+  .stamp {
+    display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--green); border: 2px solid var(--green); border-radius: 4px; padding: 4px 12px; margin-bottom: 14px;
+  }
+
+  /* Shutter flash when a booking is confirmed. */
+  .flash { position: absolute; inset: 0; background: #fff; pointer-events: none; animation: flash .5s ease-out both; }
+
+  /* Smooth motion. */
+  @keyframes enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { 0% { transform: scale(.8); } 60% { transform: scale(1.08); } 100% { transform: none; } }
+  @keyframes flash { 0% { opacity: .9; } 100% { opacity: 0; } }
+  .day, .slot, .type, .btn, .nav button { transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+
+  @media (max-width: 760px) {
+    .card { grid-template-columns: 1fr; }
+    .host { padding: 22px 18px; gap: 16px; }
+    .host h1 { font-size: 28px; }
+    .main { padding: 22px 18px 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; }
+    .flash { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+<header class="top">
+  <a class="brand" href="#">Ethan Chamberlain Photo</a>
+  <nav><a href="#about">About me</a><a href="#gallery">Sample gallery</a></nav>
+</header>
+<main class="card" id="card">
+  <aside class="host">
+    <div>
+      <h1>Book a session</h1>
+      <p>Pick a shoot, a day and a time. I'll confirm by email and send a short guide on what to wear and where to meet.</p>
+    </div>
+  </aside>
+
+  <section class="main" id="main" aria-live="polite"></section>
+</main>
+<footer class="foot"><a href="#contact">Contact</a></footer>
+</div>
+
+<script>
+(function () {
+  var card = document.getElementById('card');
+  var main = document.getElementById('main');
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var DOW = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  // Utah Valley (Provo). Times are always shown in Mountain Time, whatever the viewer's zone.
+  var LAT = 40.23, LNG = -111.66, ZONE = 'America/Denver';
+  var TYPES = [
+    { id: 'portrait', name: 'Portraits', mins: 60 },
+    { id: 'couples',  name: 'Couples',   mins: 90 },
+    { id: 'family',   name: 'Family',    mins: 90 }
+  ];
+  var today = new Date(); today.setHours(0,0,0,0);
+  var view = new Date(today.getFullYear(), today.getMonth(), 1);
+  var state = { type: TYPES[0], date: null, slot: null, step: 'pick', family: '', name: '', email: '', note: '' };
+
+  function isOpen(d) { return d >= today && d.getDay() !== 0 && d.getDay() !== 1; }
+  function sunUT(y, m, d, rising) {
+    var rad = Math.PI / 180;
+    var N = Math.round((Date.UTC(y, m, d) - Date.UTC(y, 0, 0)) / 864e5);
+    var lngHour = LNG / 15;
+    var t = N + ((rising ? 6 : 18) - lngHour) / 24;
+    var M = 0.9856 * t - 3.289;
+    var L = (M + 1.916 * Math.sin(M * rad) + 0.02 * Math.sin(2 * M * rad) + 282.634 + 720) % 360;
+    var RA = (Math.atan(0.91764 * Math.tan(L * rad)) / rad + 360) % 360;
+    RA += Math.floor(L / 90) * 90 - Math.floor(RA / 90) * 90;
+    RA /= 15;
+    var sinDec = 0.39782 * Math.sin(L * rad), cosDec = Math.cos(Math.asin(sinDec));
+    var cosH = (Math.cos(90.833 * rad) - sinDec * Math.sin(LAT * rad)) / (cosDec * Math.cos(LAT * rad));
+    var H = (rising ? 360 - Math.acos(cosH) / rad : Math.acos(cosH) / rad) / 15;
+    return ((H + RA - 0.06571 * t - 6.622 - lngHour) % 24 + 24) % 24;
+  }
+  function sunTimes(d) {
+    var y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+    var r = sunUT(y, m, day, true), s = sunUT(y, m, day, false);
+    if (s < r) s += 24;
+    var base = Date.UTC(y, m, day);
+    return { rise: new Date(base + r * 36e5), set: new Date(base + s * 36e5) };
+  }
+  function round5(ms) { return Math.round(ms / 3e5) * 3e5; }
+  function clock(ms) { return new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: ZONE }); }
+  function zoneName(d) {
+    var p = new Intl.DateTimeFormat('en-US', { timeZone: ZONE, timeZoneName: 'short' }).formatToParts(d);
+    return p.filter(function (x) { return x.type === 'timeZoneName'; })[0].value;
+  }
+  // Sunrise shoots start 20 min before sunrise. Sunset shoots end 15 min after sunset, so they start earlier for longer sessions.
+  function slotsFor(d) {
+    var sun = sunTimes(d), seed = d.getDate() * 7 + d.getMonth() * 3, out = [];
+    if (seed % 5 !== 0) out.push({ kind: 'Sunrise', time: clock(round5(sun.rise.getTime() - 20 * 6e4)), sun: clock(round5(sun.rise.getTime())), verb: 'rises' });
+    if (seed % 7 !== 0) out.push({ kind: 'Sunset', time: clock(round5(sun.set.getTime() + 15 * 6e4 - state.type.mins * 6e4)), sun: clock(round5(sun.set.getTime())), verb: 'sets' });
+    return out;
+  }
+  function fmt(d) { return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]; }); }
+
+  // full = play the page-enter animation (a new step); the pick step then updates in place without redrawing.
+  function render(full) {
+    if (state.step === 'pick') return renderPick(full);
+    if (state.step === 'details') return renderDetails();
+    renderDone();
+  }
+
+  function renderPick(full) {
+    main.innerHTML = '<div class="view">' +
+      '<h2 class="step-title">Choose your shoot</h2><div class="types" id="types"></div>' +
+      '<div class="cal-head"><h2 id="mlabel"></h2><div class="nav">' +
+      '<button id="prev" aria-label="Previous month">&larr;</button>' +
+      '<button id="next" aria-label="Next month">&rarr;</button></div></div>' +
+      '<div id="gridbox"></div><div class="slots-wrap" id="slots"></div></div>';
+    main.querySelector('#prev').onclick = function () { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); drawGrid(true); };
+    main.querySelector('#next').onclick = function () { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); drawGrid(true); };
+    drawTypes(); drawGrid(false); drawSlots(false);
+  }
+
+  function drawTypes() {
+    var box = main.querySelector('#types'), h = '';
+    TYPES.forEach(function (t) {
+      h += '<button class="type' + (t.id === state.type.id ? ' sel' : '') + '" data-id="' + t.id + '">' + t.name + '<small>' + t.mins + ' min</small></button>';
+    });
+    box.innerHTML = h;
+    box.querySelectorAll('.type').forEach(function (b) {
+      b.onclick = function () {
+        var t = TYPES.filter(function (t) { return t.id === b.dataset.id; })[0];
+        if (t === state.type) return;
+        state.type = t; state.slot = null; drawTypes(); drawSlots(false);
+      };
+    });
+  }
+
+  function drawGrid(animate) {
+    var y = view.getFullYear(), m = view.getMonth();
+    var first = new Date(y, m, 1).getDay(), count = new Date(y, m + 1, 0).getDate();
+    main.querySelector('#mlabel').textContent = MONTHS[m] + ' ' + y;
+    main.querySelector('#prev').disabled = y === today.getFullYear() && m === today.getMonth();
+    var h = '<div class="grid' + (animate ? ' month' : '') + '">';
+    DOW.forEach(function (d) { h += '<div class="dow">' + d + '</div>'; });
+    for (var i = 0; i < first; i++) h += '<div></div>';
+    for (var d = 1; d <= count; d++) {
+      var dt = new Date(y, m, d), open = isOpen(dt);
+      var cls = 'day' + (open ? ' open' : '') + (dt.getTime() === today.getTime() ? ' today' : '') +
+                (state.date && dt.getTime() === state.date.getTime() ? ' sel' : '');
+      h += '<button class="' + cls + '" data-d="' + d + '"' + (open ? '' : ' disabled') + '>' + d + '</button>';
+    }
+    var box = main.querySelector('#gridbox');
+    box.innerHTML = h + '</div>';
+    box.querySelectorAll('.day.open').forEach(function (b) {
+      b.onclick = function () {
+        state.date = new Date(y, m, +b.dataset.d); state.slot = null;
+        box.querySelectorAll('.day.sel').forEach(function (x) { x.classList.remove('sel', 'pop'); });
+        b.classList.add('sel', 'pop');
+        drawSlots(true);
+      };
+    });
+  }
+
+  function drawSlots(animate) {
+    var box = main.querySelector('#slots'), h = '';
+    if (!state.date) {
+      h = '<p class="hint">Days with a green tile are open, Tuesday to Saturday. Pick one to see sunrise and sunset shoot times for Utah Valley.</p>';
+    } else {
+      var sun = sunTimes(state.date), avail = slotsFor(state.date);
+      h += '<p class="slots-label">' + fmt(state.date) + '</p>' +
+           '<p class="hint sun">Sunrise ' + clock(round5(sun.rise.getTime())) + ' &middot; Sunset ' + clock(round5(sun.set.getTime())) +
+           ' &middot; Utah Valley, ' + zoneName(state.date) + '</p><div class="slots' + (animate ? ' anim' : '') + '">';
+      avail.forEach(function (sl, i) {
+        var on = state.slot && state.slot.kind === sl.kind && state.slot.time === sl.time;
+        h += '<button class="slot' + (on ? ' sel' : '') + '" style="--i:' + i + '" data-i="' + i + '"><span>' + sl.kind + ' shoot</span>Starts ' + sl.time +
+             '<small>Sun ' + sl.verb + ' ' + sl.sun + '</small></button>';
+      });
+      if (!avail.length) h += '<p class="hint">No shoots open this day. Try another.</p>';
+      h += '</div>';
+      if (state.slot) h += '<div class="row" style="margin-top:18px"><button class="btn" id="go">Continue</button></div>';
+    }
+    box.innerHTML = h;
+    box.querySelectorAll('.slot').forEach(function (b) {
+      b.onclick = function () { state.slot = slotsFor(state.date)[+b.dataset.i]; drawSlots(false); };
+    });
+    var go = box.querySelector('#go');
+    if (go) go.onclick = function () { state.step = 'details'; render(true); };
+  }
+
+  function summary() {
+    return '<p class="summary"><strong>' + state.type.name + '</strong> &middot; ' + state.type.mins + ' minutes' +
+           (state.type.id === 'family' && state.family ? ' &middot; ' + esc(state.family) + ' people' : '') + '<br>' +
+           fmt(state.date) + '<br>' + state.slot.kind + ' shoot, starts ' + state.slot.time + ' ' + zoneName(state.date) +
+           ' (sun ' + state.slot.verb + ' ' + state.slot.sun + ')</p>';
+  }
+
+  function renderDetails() {
+    var isFamily = state.type.id === 'family', opts = '<option value=""' + (state.family ? '' : ' selected') + ' disabled>Choose a number</option>';
+    for (var n = 2; n <= 9; n++) opts += '<option value="' + n + '"' + (state.family === String(n) ? ' selected' : '') + '>' + n + '</option>';
+    opts += '<option value="10+"' + (state.family === '10+' ? ' selected' : '') + '>10 or more</option>';
+    main.innerHTML = '<div class="view">' +
+      '<h2 class="step-title">Your details</h2>' + summary() +
+      '<form id="f">' +
+      (isFamily ? '<label for="family">How big is your family?<select id="family" required>' + opts + '</select></label>' : '') +
+      '<label for="name">Your name<input id="name" required autocomplete="name" value="' + esc(state.name) + '"></label>' +
+      '<label for="email">Email<input id="email" type="email" required autocomplete="email" value="' + esc(state.email) + '"></label>' +
+      '<label for="note">Location ideas or anything to know? (optional)<textarea id="note" rows="3">' + esc(state.note) + '</textarea></label>' +
+      '<div class="row"><button class="btn" type="submit">Book session</button>' +
+      '<button class="btn ghost" type="button" id="back">Back</button></div></form></div>';
+    var f = main.querySelector('#f');
+    function keep() {
+      var fam = main.querySelector('#family');
+      if (fam) state.family = fam.value;
+      state.name = main.querySelector('#name').value;
+      state.email = main.querySelector('#email').value;
+      state.note = main.querySelector('#note').value;
+    }
+    main.querySelector('#back').onclick = function () { keep(); state.step = 'pick'; render(true); };
+    f.onsubmit = function (e) {
+      e.preventDefault(); keep(); state.step = 'done'; render(true);
+      var fl = document.createElement('div'); fl.className = 'flash';
+      card.appendChild(fl); setTimeout(function () { fl.remove(); }, 450);
+    };
+    main.querySelector(isFamily ? '#family' : '#name').focus();
+  }
+
+  function renderDone() {
+    var first = state.name.trim().split(/\s+/)[0] || 'there';
+    main.innerHTML = '<div class="view">' +
+      '<span class="stamp">Booked</span>' +
+      '<h2 class="step-title">Thanks, ' + esc(first) + '. You are in.</h2>' + summary() +
+      '<p>A confirmation is on its way to ' + esc(state.email) + '. I will follow up with location options and a short prep guide.</p>' +
+      '<div class="row" style="margin-top:18px"><button class="btn ghost" id="again">Book another session</button></div></div>';
+    main.querySelector('#again').onclick = function () {
+      state = { type: TYPES[0], date: null, slot: null, step: 'pick', family: '', name: '', email: '', note: '' }; render(true);
+    };
+  }
+
+  render(true);
+})();
+</script>
+</body>
+</html>
